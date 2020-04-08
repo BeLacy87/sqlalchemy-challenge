@@ -1,5 +1,5 @@
 import numpy as np
-
+import datetime as dt
 import sqlalchemy
 from sqlalchemy.ext.automap import automap_base
 from sqlalchemy.orm import Session
@@ -29,15 +29,44 @@ def home_page():
 
 @app.route("/api/v1.0/precipitation")
 def precipitation():
-    return (f"test")
+    session=Session(engine)
+    results=session.query(Measurement.date, Measurement.prcp).all()
+    session.close()
+
+    dict={}
+    for i in results:
+        dict.update({i[0]:i[1]})
+    return jsonify(f"{dict}")
 
 @app.route("/api/v1.0/stations")
 def stations():
-    return (f"test")
+    session=Session(engine)
+    result=session.query(Station.name).distinct()
+    session.close()
+
+    station=[]
+    for i in result:
+        station.append(i)
+    return jsonify(f"{station}")
 
 @app.route("/api/v1.0/tobs")
 def tobs():
-    return (f"test")
+    session=Session(engine)
+
+    most_recent_data_point=session.query(Measurement.date).\
+        order_by((Measurement.date).desc()).first()[0]
+    most_recent_date = dt.datetime.strptime(str(most_recent_data_point), '%Y-%m-%d').date()
+    year_ago = most_recent_date - dt.timedelta(days=365)
+
+    temp_obs=session.query(Measurement.date, Measurement.tobs).\
+        filter(Station.station == Measurement.station).\
+            filter(Measurement.date > year_ago).\
+                filter(Station.id == 7).all()
+    session.close()
+    dict={}
+    for i in temp_obs:
+        dict.update({i[0]:i[1]})
+    return jsonify(f"{dict}")
 
 @app.route("/api/v1.0/<start>")
 def start():
