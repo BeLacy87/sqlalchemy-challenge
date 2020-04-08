@@ -69,13 +69,44 @@ def tobs():
     return jsonify(f"{dict}")
 
 @app.route("/api/v1.0/<start>")
-def start():
-    return (f"test")
+def start(start):
+    start_date = dt.datetime.strptime(str(start), '%Y-%m-%d').date()
+    session=Session(engine)
+    temp_stats=session.query(Station.id,
+    func.max(Measurement.tobs),
+    func.min(Measurement.tobs),
+    func.avg(Measurement.tobs)).\
+        filter(Station.station == Measurement.station).\
+            filter(Measurement.date > start_date).all()
+
+    dict={'Station':temp_stats[0][0],
+    'max temp':temp_stats[0][1],
+    'min temp':temp_stats[0][2],
+    'avg temp':temp_stats[0][3]}
+    session.close()
+
+    return jsonify(f"{dict}")
 
 @app.route("/api/v1.0/<start>/<end>")
-def start_end():
-    return (f"test")
+def start_end(start,end):
+    start_date = dt.datetime.strptime(str(start), '%Y-%m-%d').date()
+    end_date = dt.datetime.strptime(str(end), '%Y-%m-%d').date()
+    session=Session(engine)
+    temp_stats=session.query(Station.id,
+    func.max(Measurement.tobs),
+    func.min(Measurement.tobs),
+    func.avg(Measurement.tobs)).\
+        filter(Station.station == Measurement.station).\
+            filter(Measurement.date > start_date).\
+                filter(Measurement.date < end_date).all()
 
+    dict={'Station':temp_stats[0][0],
+    'max temp':temp_stats[0][1],
+    'min temp':temp_stats[0][2],
+    'avg temp':temp_stats[0][3]}
+    session.close()
+
+    return jsonify(f"{dict}")    
 
 if __name__ == '__main__':
     app.run(debug=True)
